@@ -1,15 +1,16 @@
-# clip-search-engine
+<h1 align="center">
+    <img src="static/logo.png" alt="logo" width="300"/>
+    <br />
+    Clip Search Engine
+</h1>
 
 An image-to-image search engine using CLIP embeddings to find the most similar images to the provided one.
 It is based on [this guide](https://blog.roboflow.com/clip-image-search-faiss/)
 
-<div align="center">
-  <img src="static/logo.jpeg" alt="logo" width="600"/>
-</div>
-
 ## Installation
 
 Install the necessary requirements from the `requirements.txt` file. This repo uses [faiss](https://github.com/facebookresearch/faiss) to build the index and search for the nearest neighbors, and [Flask](https://flask.palletsprojects.com/en/3.0.x/) to visualize the results in a webpage.
+
 ```bash
 pip install -r requirements.txt
 ```
