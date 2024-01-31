@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="icon" href="static/thumbnail.jpeg" type="image/jpeg">
+    <title>CLIP Search Engine</title>
+    <style>
+        .frame {
+            max-width: 1000px;
+            /* margin-top: 30px; */
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .frame img {
+            max-width: 300px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+
+        .input-container {
+            min-height: 100px;
+        }
+
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .image-container img {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            margin: 5px;
+            justify-content: space-around;
+        }
+
+        .query,
+        .nn {
+            text-align: center;
+        }
+
+        .query img {
+            width: 200px;
+        }
+
+        #image-preview {
+            max-width: 100px;
+            margin-left: 10px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="frame" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <h1 style="font-size: 36px; text-align: center;">CLIP Search Engine</h1>
+        <img src="static/logo.jpeg" />
+        <form action="/" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+            <div style="text-align: center;">
+                <div class="input-container" style="display: flex">
+                    <input type="file" name="image" accept="image/*" onchange="previewImage(event)"
+                        style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                    <div id="image-preview"></div>
+                </div>
+                <br>
+                <input type="number" name="K" value="4"
+                    style="margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <br>
+                <input type="submit" value="Search"
+                    style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                <button type="button" onclick="location.href = '/clear'"
+                    style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;">Clear</button>
+            </div>
+        </form>
+        {% if query_img_path %}
+        <div class="query">
+            <img src="{{ url_for('static', filename=query_img_path) }}">
+            <p>Query</p>
+        </div>
+        {% endif %}
+        <div class="image-container">
+            {% for image_path, score in paths_and_scores %}
+            <div class="nn">
+                <img src="{{ url_for('static', filename=image_path) }}">
+                <p>{{ score }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function previewImage(event) {
+            var imageContainer = document.querySelector('#image-preview');
+            imageContainer.innerHTML = '';
+
+            var file = event.target.files[0];
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                img.style = 'max-width: 100px; max-height: 100px; object-fit: cover;';
+                imageContainer.appendChild(img);
+            }
+
+            reader.readAsDataURL(file);
+        }
+
+        function validateForm() {
+            var fileInput = document.querySelector('input[type="file"]');
+            if (fileInput.files.length === 0) {
+                alert("Please upload an image.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+
+</html>
