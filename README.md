@@ -3,6 +3,9 @@
 An image-to-image search engine using CLIP embeddings to find the most similar images to the provided one.
 It is based on the following [guide](https://blog.roboflow.com/clip-image-search-faiss/)
 
+![Project logo](static/logo.jpeg)
+
+
 ## Installation
 
 ## Usage
