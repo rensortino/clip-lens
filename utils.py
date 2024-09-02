@@ -22,15 +22,17 @@ def embed_image(image, model, preprocess, device="cuda"):
         return model.encode_image(image)
 
 
-def index_data(data, filename, index):
-    if isinstance(index, faiss.IndexFlatIP):
-        data = faiss.normalize_L2(data)
-    index.add(data.cpu().numpy().astype(np.float32))
+def index_data(data, index, distance="cosine"):
+    data_cpu = data.cpu().numpy().astype(np.float32)
+    if distance == "cosine":
+        faiss.normalize_L2(data_cpu)
+    index.add(data_cpu)
     return index
 
 
 def search_image(img_path, index, model, preprocess, nres=5):
     query_img = Image.open(img_path)
     query = embed_image(query_img, model, preprocess)
+    query = faiss.normalize_L2(query)
     D, I = index.search(np.array(query.cpu()).astype(np.float32), nres)
     return D, I

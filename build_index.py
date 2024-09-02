@@ -44,7 +44,7 @@ if __name__ == "__main__":
     for img_path in tqdm(img_dir.glob("**/*.jpg")):
         img = Image.open(img_path)
         features = embed_image(img, model, preprocess)
-        index = index_data(features, img_path, index)
+        index = index_data(features, index, args.distance)
         file_names.append(str(img_path.absolute()))
 
     index_cpu = faiss.index_gpu_to_cpu(index)
