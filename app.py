@@ -3,10 +3,12 @@ import json
 import shutil
 from pathlib import Path
 
-import cv2
 import faiss
+import numpy as np
 from flask import Flask, redirect, render_template, request, url_for
 from PIL import Image
+import torch
+from clip import clip
 
 from utils import load_model, search_image
 
@@ -43,8 +45,8 @@ def clear():
     return redirect(url_for("home"))
 
 
-@app.route("/", methods=["POST"])
-def upload_image():
+@app.route("/knn", methods=["POST"])
+def knn_search():
     if "image" not in request.files:
         return "No file uploaded", 400
 
@@ -52,22 +54,82 @@ def upload_image():
 
     file = request.files["image"]
     D, I = search_image(file, index, model, preprocess, nres=K)
-    images = [cv2.imread(file_names[i]) for i in I[0]]
+
+    image_paths = [file_names[i] for i in I[0]]
     scores = [d for d in D[0]]
 
-    Path("static/.tmp").mkdir(exist_ok=True)
-    query_img_path = ".tmp/query.png"
-    Image.open(file).save(Path("static") / query_img_path)
-    image_paths = [f".tmp/{i}.png" for i in range(len(images))]
+    tmp_dir = Path("static/.tmp")
+    tmp_dir.mkdir(exist_ok=True)
+    query_img_path = tmp_dir / "query.png"
+    Image.open(file).save(query_img_path)
+    dst_image_paths = [f"{tmp_dir.as_posix()}/{i}.png" for i in range(len(image_paths))]
     [
-        Image.fromarray(img).save(Path("static") / image_paths[i])
-        for i, img in enumerate(images)
+        shutil.copy(img, dst_image_paths[i])
+        for i, img in enumerate(image_paths)
     ]
 
     return render_template(
         "index.html",
+        tab="knn",
         query_img_path=query_img_path,
-        paths_and_scores=zip(image_paths, scores),
+        paths_and_scores=zip(dst_image_paths, scores),
+    )
+
+
+@app.route("/clip", methods=["POST"])
+def clip_similarity():
+    if "image1" not in request.files or "image2" not in request.files:
+        return "Two images required", 400
+
+    image1 = Image.open(request.files["image1"])
+    image2 = Image.open(request.files["image2"])
+
+    image1 = preprocess(image1).unsqueeze(0).to("cuda")
+    image2 = preprocess(image2).unsqueeze(0).to("cuda")
+
+    with torch.no_grad():
+        embedding1 = model.encode_image(image1).squeeze().cpu().numpy()
+        embedding2 = model.encode_image(image2).squeeze().cpu().numpy()
+
+    similarity = np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
+
+    return render_template(
+        "index.html",
+        tab="clip",
+        similarity=similarity,
+    )
+
+
+@app.route("/text_index", methods=["POST"])
+def text_index():
+    if "text" not in request.form:
+        return "Text required", 400
+
+    text = request.form["text"]
+    text_tokens = clip.tokenize([text]).to("cuda")
+    with torch.no_grad():
+        text_embedding = model.encode_text(text_tokens).squeeze().cpu().numpy()
+
+    faiss.normalize_L2(text_embedding.astype('float32'))
+    D, I = index.search(text_embedding.reshape(1, -1), 5)
+
+    image_paths = [file_names[i] for i in I[0]]
+    scores = [d for d in D[0]]
+
+    tmp_dir = Path("static/.tmp")
+    tmp_dir.mkdir(exist_ok=True)
+    dst_image_paths = [f"{tmp_dir.as_posix()}/{i}.png" for i in range(len(image_paths))]
+    [
+        shutil.copy(img, dst_image_paths[i])
+        for i, img in enumerate(image_paths)
+    ]
+
+    dst_image_paths = ["/".join(path.split('/')[1:]) for path in dst_image_paths]
+
+    return render_template(
+        "index.html",
+        tab="text_index",
+        paths_and_scores=zip(dst_image_paths, scores),
     )
 
 
