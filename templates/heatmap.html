@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Similarity Matrix Heatmap</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <form id="heatmap-form" class="space-y-4">
+                <div>
+                    <label for="model-id" class="block text-gray-700 text-sm font-bold mb-2">Model ID:</label>
+                    <select id="model-id" name="model-id" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">Select a model</option>
+                        <option value="model1">Model 1</option>
+                        <option value="model2">Model 2</option>
+                        <option value="model3">Model 3</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="image-directory" class="block text-gray-700 text-sm font-bold mb-2">Image Directory:</label>
+                    <input type="file" id="image-directory" name="image-directory" webkitdirectory directory multiple required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div>
+                    <label for="display-limit" class="block text-gray-700 text-sm font-bold mb-2">Display Limit:</label>
+                    <input type="number" id="display-limit" name="display-limit" min="1" max="100" value="25" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Generate Heatmap</button>
+                </div>
+            </form>
+        </div>
+        <div id="heatmap" class="bg-white shadow-md rounded p-4 mb-4 h-[600px]"></div>
+        <div id="image-container" class="flex justify-center space-x-4">
+            <img id="image1" src="" alt="Image 1" class="max-w-[300px] max-h-[300px] rounded shadow-md">
+            <img id="image2" src="" alt="Image 2" class="max-w-[300px] max-h-[300px] rounded shadow-md">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('heatmap-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const modelId = document.getElementById('model-id').value;
+            const imageDirectory = document.getElementById('image-directory').files;
+            const displayLimit = document.getElementById('display-limit').value;
+
+            // Create FormData object to handle file input
+            const formData = new FormData();
+            formData.append('modelId', modelId);
+            for (let i = 0; i < imageDirectory.length; i++) {
+                formData.append('images', imageDirectory[i]);
+            }
+            formData.append('displayLimit', displayLimit);
+
+            // Send form data to backend and generate heatmap
+            fetch('/generate_heatmap', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(json => {
+                Plotly.newPlot('heatmap', json.fig_data.data, json.fig_data.layout);
+                const image_paths = json.image_paths;
+                
+                let heatmapElement = document.getElementById('heatmap');
+                heatmapElement.on('plotly_hover', function(data) {
+                    let point = data.points[0];
+                    let row = point.customdata[0];
+                    let col = point.customdata[1];
+                    document.getElementById('image1').src = image_paths[row];
+                    document.getElementById('image2').src = image_paths[col];
+                });
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>

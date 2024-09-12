@@ -64,7 +64,6 @@
             <nav>
                 <div class="nav nav-tabs" id="nav-tab" role="tablist">
                     <button class="nav-link" id="nav-knn-tab" data-bs-toggle="tab" data-bs-target="#nav-knn" type="button" role="tab" aria-controls="nav-knn" aria-selected="true">KNN Search</button>
-                    <button class="nav-link" id="nav-clip-tab" data-bs-toggle="tab" data-bs-target="#nav-clip" type="button" role="tab" aria-controls="nav-clip" aria-selected="false">CLIP Similarity</button>
                     <button class="nav-link" id="nav-text-index-tab" data-bs-toggle="tab" data-bs-target="#nav-text-index" type="button" role="tab" aria-controls="nav-text-index" aria-selected="false">Text Indexing</button>
                 </div>
             </nav>
@@ -90,42 +89,7 @@
                             </div>
                         </form>
                 </div>
-                <div class="tab-pane fade" id="nav-clip" role="tabpanel" aria-labelledby="nav-clip-tab">
-                    <h2 class="mt-3">CLIP Similarity</h2>
-                    <form action="{{ url_for('clip_similarity') }}" method="post" enctype="multipart/form-data" class="mb-3" id="clip-form">
-                        <div class="row">
-                            <div class="col-sm-4 mb-3">
-                                <label for="image1" class="form-label mb-3">Upload Reference Image</label>
-                                <input type="file" class="form-control" id="image1" name="image1" accept="image/*" required>
-                                <img id="image1-preview" class="preview-image" style="width:300px" src="" alt="Image 1 preview" style="display:none;">
-                            </div>
-                            <div class="col-sm-4 mb-3">
-                                <label for="image2" class="form-label mb-3">Upload Comparison Image</label>
-                                <input type="file" class="form-control" id="image2" name="image2" accept="image/*" required>
-                                <img id="image2-preview" class="preview-image" style="width:300px" src="" alt="Image 2 preview" style="display:none;">
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Compare</button>
-                    </form>
 
-                    {% if tab == 'clip' %}
-                        <h3 class="mt-4">Comparison Results:</h3>
-                        <h4>Cosine similarity: {{ similarity }}</h4>
-                        <div class="row">
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card result-card">
-                                    <img src="{{ query_image_path }}" class="result-image" alt="Result image">
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card result-card">
-                                    <img src="{{ comparison_image_path }}" class="result-image" alt="Result image">
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-
-                </div>
                 <div class="tab-pane fade" id="nav-text-index" role="tabpanel" aria-labelledby="nav-text-index-tab">
                     <h2 class="mt-3">Text KNN Search</h2>
                     <form action="{{ url_for('text_index') }}" method="post" class="mb-3" id="text-index-form">
@@ -189,23 +153,9 @@
             document.getElementById('image').addEventListener('change', function() {
                 previewImage(this, 'image-preview');
             });
-            document.getElementById('image1').addEventListener('change', function() {
-                previewImage(this, 'image1-preview');
-            });
-            document.getElementById('image2').addEventListener('change', function() {
-                previewImage(this, 'image2-preview');
-            });
 
             // Form validation
             document.getElementById('knn-form').addEventListener('submit', function(event) {
-                if (!this.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                this.classList.add('was-validated');
-            });
-
-            document.getElementById('clip-form').addEventListener('submit', function(event) {
                 if (!this.checkValidity()) {
                     event.preventDefault();
                     event.stopPropagation();

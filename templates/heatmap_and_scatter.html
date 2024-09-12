@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Similarity Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/script.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-7xl mx-auto">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <form id="visualization-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="model-id" class="block text-gray-700 text-sm font-bold mb-2">Model ID:</label>
+                        <select id="model-id" name="model-id" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="">Select a model</option>
+                            <option value="openai/clip-vit-base-patch16">CLIP ViT Base 16</option>
+                            <option value="facebook/dinov2-base">Dinov2 Base</option>
+                            <!-- <option value="model3">Model 3</option> -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="style1" class="block text-gray-700 text-sm font-bold mb-2">Style 1:</label>
+                        <select id="style1" name="style1" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="">Select the style</option>
+                            {% for folder in styles %}
+                                <option value="{{ folder }}">{{ folder }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="object1" class="block text-gray-700 text-sm font-bold mb-2">Object 1:</label>
+                        <select id="object1" name="object1" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="">Select the style</option>
+                            {% for folder in objects %}
+                                <option value="{{ folder }}">{{ folder }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="style2" class="block text-gray-700 text-sm font-bold mb-2">Style 2:</label>
+                        <select id="style2" name="style2" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="">Select the style</option>
+                            {% for folder in styles %}
+                                <option value="{{ folder }}">{{ folder }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="object2" class="block text-gray-700 text-sm font-bold mb-2">Object 2:</label>
+                        <select id="object2" name="object2" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                            <option value="">Select the style</option>
+                            {% for folder in objects %}
+                                <option value="{{ folder }}">{{ folder }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- <div>
+                        <label for="image-directory" class="block text-gray-700 text-sm font-bold mb-2">Image Directory:</label>
+                        <input type="file" id="image-directory" name="image-directory" webkitdirectory directory multiple class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div> -->
+                    <div>
+                        <label for="display-limit" class="block text-gray-700 text-sm font-bold mb-2">Display Limit:</label>
+                        <input type="number" id="display-limit" name="display-limit" min="1" max="300" value="80" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Generate Visualizations</button>
+                </div>
+            </form>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="heatmap" class="bg-white shadow-md rounded p-4 h-[500px]"></div>
+            <div id="image-container" class="flex justify-center space-x-4 mt-4">
+                <img id="image-heatmap1" src="" alt="Image Heatmap 1" class="max-w-[300px] max-h-[300px] rounded shadow-md">
+                <img id="image-heatmap2" src="" alt="Image Heatmap 2" class="max-w-[300px] max-h-[300px] rounded shadow-md">
+            </div>
+            <div id="scatter" class="bg-white shadow-md rounded p-4 h-[500px]"></div>
+            <div id="image-container" class="flex justify-center space-x-4 mt-4">
+                <img id="image-scatter" src="" alt="Image Scatter" class="max-w-[300px] max-h-[300px] rounded shadow-md">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let heatmapPlot, scatterPlot;
+        // const highlightColor = "#FFFF00"
+
+
+        document.getElementById('visualization-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const modelId = document.getElementById('model-id').value;
+            // const imageDirectory = document.getElementById('image-directory').files;
+            const displayLimit = document.getElementById('display-limit').value;
+            const style1 = document.getElementById('style1').value;
+            const style2 = document.getElementById('style2').value;
+            const object1 = document.getElementById('object1').value;
+            const object2 = document.getElementById('object2').value;
+
+            const formData = new FormData();
+            formData.append('modelId', modelId);
+            // for (let i = 0; i < imageDirectory.length; i++) {
+            //     formData.append('images', imageDirectory[i]);
+            // }
+            formData.append('displayLimit', displayLimit);
+            formData.append('style1', style1);
+            formData.append('style2', style2);
+            formData.append('object1', object1);
+            formData.append('object2', object2);
+
+            fetch('/generate_visualizations', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                heatmapPlot = Plotly.newPlot('heatmap', data.heatmap.data, data.heatmap.layout);
+                scatterPlot = Plotly.newPlot('scatter', data.scatter.data, data.scatter.layout);
+                
+                setupCrossHovering(heatmapPlot, scatterPlot);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+        </script>
+</body>
+</html>
