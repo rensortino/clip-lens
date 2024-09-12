@@ -6,6 +6,11 @@ class EmbeddingModel:
         self.model = AutoModel.from_pretrained(model_id).to(device)
         self.preprocessor = AutoImageProcessor.from_pretrained(model_id)
         self.device = device
+        # self.emb_size = self.encode_image(torch.rand([1,3,224,224], device=self.device)).shape[-1]
+        self.model.eval()
+
+    def __call__(self, x):
+        return self.encode_image(x)
     
     def encode_image(self, x):
         with torch.no_grad():
