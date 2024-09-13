@@ -30,7 +30,7 @@ function setupScatterHovering(scatterElement) {
         const point = data.points[0];
         const index = point.pointNumber;
         Plotly.Fx.hover("heatmap", [
-            {pointNumber: index},
+            {pointNumber: [index, index]}
         ])
         // originalColors = [...data.points[0].data.marker.color]
         // highlightScatterPoint(data)
