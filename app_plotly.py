@@ -34,7 +34,6 @@ similarity_matrix = torch.load("heatmap.pt")  # Replace with your actual data
 similarity_list = similarity_matrix.tolist()
 
 # Dummy image paths (replace with your actual image paths or data)
-# image_paths = [ ("/" / path).as_posix() for path in sorted(Path("static/.tmp").iterdir())]
 image_dir = Path("static/.tmp")
 global image_paths
 image_paths = [ ("/" / path).as_posix() for path in sorted(image_dir.iterdir())]
@@ -54,30 +53,23 @@ def process_images(model, images, start=0):
 
 def get_heatmap_plotly(similarity_matrix):
     # Create heatmap data
-    heatmap_trace = go.Heatmap(z=similarity_matrix, colorscale='inferno', zmin=0, zmax=1)
-    heatmap_layout = go.Layout(title='Similarity Matrix Heatmap')
+    heatmap_trace = go.Heatmap(z=similarity_matrix, colorscale='inferno', zmin=0, zmax=1, hoverinfo="text", text=similarity_matrix)
+    heatmap_layout = go.Layout(title='Similarity Matrix Heatmap', width=400, height=400)
     heatmap_fig = go.Figure(data=[heatmap_trace], layout=heatmap_layout)
     return heatmap_fig
 
-def get_scatter_plotly(embeddings, numel1=None, numel2=None):
-    if numel1 is None and numel2 is None:
-        colors = ["#000000"]*embeddings.shape[0],
-    elif numel1 is None or numel2 is None:
-        numel1 = embeddings.shape[0] - numel2 if numel1 is None else numel1 
-        numel2 = embeddings.shape[0] - numel1 if numel2 is None else numel2
-    
-    colors1 = ["red"] * numel1
-    colors2 = ["blue"] * numel2
-    colors = colors1 + colors2
-    # Create scatter plot data
+def get_scatter_plotly(embeddings, colors, labels=None):
+    labels = ["image"] * embeddings.shape[0] if labels is None else labels
     scatter_trace = go.Scatter(
         x=embeddings[:, 0],
         y=embeddings[:, 1],
         mode='markers',
         marker=dict(size=10, opacity=0.6, color=colors),
-        text=[f'Image {i}' for i in range(len(embeddings))]
+        hoverinfo="text",
+        # text=[f'Image {i}' for i in range(len(embeddings))]
+        text=labels
     )
-    scatter_layout = go.Layout(title='Image Embeddings Scatter Plot')
+    scatter_layout = go.Layout(title='Image Embeddings Scatter Plot', width=400, height=400,)
     return go.Figure(data=[scatter_trace], layout=scatter_layout)
 
 @app.route('/')
@@ -86,6 +78,8 @@ def index():
 
 @app.route('/generate_visualizations', methods=['POST'])
 def generate_visualizations():
+    color1 = "red"
+    color2 = "blue"
     model_id = request.form['modelId']
     display_limit = int(request.form['displayLimit'])
 
@@ -116,8 +110,9 @@ def generate_visualizations():
     umap_emb = umap.fit_transform(embeddings.cpu().numpy())
 
     heatmap_fig = get_heatmap_plotly(similarity_matrix)
-    scatter_pca = get_scatter_plotly(pca_emb, numel1=embeddings1.shape[0], numel2=embeddings2.shape[0])
-    scatter_umap = get_scatter_plotly(umap_emb, numel1=embeddings1.shape[0], numel2=embeddings2.shape[0])
+    colors = [color1] * embeddings1.shape[0] + [color2] * embeddings2.shape[0]
+    scatter_pca = get_scatter_plotly(pca_emb, colors, labels=images)
+    scatter_umap = get_scatter_plotly(umap_emb, colors, labels=images)
 
     global image_paths
     image_paths = [ ("/" / path).as_posix() for path in sorted(image_dir.iterdir())]

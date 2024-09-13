@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Similarity Visualization</title>
+    <title>CLIP Lens</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/static/script.js"></script>
+    <style>
+        .plot-container {
+          height: 44vh
+        }
+    </style>
 </head>
 <body class="bg-gray-100 p-6">
+    <h2>Style Transfer</h2>
     <div class="max-w-7xl mx-auto">
         <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
             <form id="visualization-form" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div>
                         <label for="model-id" class="block text-gray-700 text-sm font-bold mb-2">Model ID:</label>
                         <select id="model-id" name="model-id" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                            <!-- <option value="">Select a model</option> -->
                             <option value="openai/clip-vit-base-patch16">CLIP ViT Base 16</option>
                             <option value="facebook/dinov2-base">Dinov2 Base</option>
-                            <!-- <option value="model3">Model 3</option> -->
                         </select>
                     </div>
                     <div>
@@ -58,10 +62,6 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <!-- <div>
-                        <label for="image-directory" class="block text-gray-700 text-sm font-bold mb-2">Image Directory:</label>
-                        <input type="file" id="image-directory" name="image-directory" webkitdirectory directory multiple class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    </div> -->
                     <div>
                         <label for="display-limit" class="block text-gray-700 text-sm font-bold mb-2">Display Limit:</label>
                         <input type="number" id="display-limit" name="display-limit" min="1" max="300" value="80" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
@@ -72,30 +72,26 @@
                 </div>
             </form>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div id="heatmap" class="bg-white shadow-md rounded p-4 h-[500px]"></div>
-            <div id="image-container" class="flex justify-center space-x-4 mt-4">
-                <img id="image-heatmap1" src="" alt="Image Heatmap 1" class="max-w-[300px] max-h-[300px] rounded shadow-md">
-                <img id="image-heatmap2" src="" alt="Image Heatmap 2" class="max-w-[300px] max-h-[300px] rounded shadow-md">
-            </div>
+        <div class="grid grid-cols-3 gap-4 items-end">
+            <div id="heatmap" class="plot-container bg-white shadow-md rounded p-4 h-[500px]"></div>
             <div>
                 <label for="reduction" class="block text-gray-700 text-sm font-bold mb-2">Reduction:</label>
                 <select id="reduction" name="reduction" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                     <option value="pca" selected>PCA</option>
                     <option value="umap">UMAP</option>
                 </select>
-                <div id="scatter_pca" class="bg-white shadow-md rounded p-4 h-[500px]"></div>
-                <div id="scatter_umap" class="bg-white shadow-md rounded p-4 h-[500px]"></div>
+                <div id="scatter_pca" class="plot-container bg-white shadow-md h-[500px] rounded p-4"></div>
+                <div id="scatter_umap" class="plot-container bg-white shadow-md h-[500px] rounded p-4"></div>
             </div>
-            <div id="image-container" class="flex justify-center space-x-4 mt-4">
-                <img id="image-scatter" src="" alt="Image Scatter" class="max-w-[300px] max-h-[300px] rounded shadow-md">
-            </div>
+            <div id="image-container" class="flex-col self-center mt-4">
+                <img id="image1" src="" alt="Image 1" class="w-[200px] h-[200px] rounded shadow-md">
+                <img id="image2" src="" alt="Image 2" class="w-[200px] h-[200px] mt-4 rounded shadow-md">
+            </div>  
         </div>
     </div>
 
     <script>
         let heatmapPlot, scatterPlot;
-        // const highlightColor = "#FFFF00"
         const heatmapElement = document.getElementById('heatmap');
         const scatterPCAElement = document.getElementById('scatter_pca');
         const scatterUMAPElement = document.getElementById('scatter_umap');
@@ -115,7 +111,6 @@
         document.getElementById('visualization-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const modelId = document.getElementById('model-id').value;
-            // const imageDirectory = document.getElementById('image-directory').files;
             const displayLimit = document.getElementById('display-limit').value;
             const style1 = document.getElementById('style1').value;
             const style2 = document.getElementById('style2').value;
@@ -124,9 +119,6 @@
 
             const formData = new FormData();
             formData.append('modelId', modelId);
-            // for (let i = 0; i < imageDirectory.length; i++) {
-            //     formData.append('images', imageDirectory[i]);
-            // }
             formData.append('displayLimit', displayLimit);
             formData.append('style1', style1);
             formData.append('style2', style2);
@@ -143,7 +135,6 @@
                 scatterPCAPlot = Plotly.newPlot('scatter_pca', data.scatter_pca.data, data.scatter_pca.layout);
                 scatterUMAPPlot = Plotly.newPlot('scatter_umap', data.scatter_umap.data, data.scatter_umap.layout);
                 
-                // setupCrossHovering();
                 setupHeatmapHovering(heatmapElement)
                 setupScatterHovering(scatterPCAElement)
                 setupScatterHovering(scatterUMAPElement)
