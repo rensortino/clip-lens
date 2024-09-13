@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Analysis Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="chart" style="width:100%;height:100%;"></div>
+
+    <script>
+        var graphs = {{graphJSON | safe}};
+        Plotly.newPlot('chart', graphs);
+
+        var myPlot = document.getElementById('chart');
+
+        myPlot.on('plotly_hover', function(data){
+            var curveNumber = data.points[0].curveNumber;
+            var pointIndex = data.points[0].pointIndex;
+
+            var otherPoint;
+            if (curveNumber === 0) {  // Heatmap
+                otherPoint = {
+                    curveNumber: 1,
+                    pointNumber: pointIndex[1]
+                };
+            } else {  // Scatter plot
+                var customdata = data.points[0].customdata;
+                otherPoint = {
+                    curveNumber: 0,
+                    pointNumber: [customdata, customdata]
+                };
+            }
+
+            var pointData = {
+                data: graphs.data,
+                layout: graphs.layout,
+                point: otherPoint
+            };
+
+            Plotly.Fx.hover('chart', [pointData]);
+        });
+
+        // Add this to clear hover effects when moving away from a point
+        myPlot.on('plotly_unhover', function(data){
+            Plotly.Fx.unhover('chart');
+        });
+    </script>
+</body>
+</html>
