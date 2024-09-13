@@ -3,6 +3,7 @@ import faiss
 import numpy as np
 import torch
 from PIL import Image
+from pathlib import Path
 
 # pip install git+https://github.com/openai/CLIP.git
 
@@ -22,15 +23,19 @@ def embed_image(image, model, preprocess, device="cuda"):
         return model.encode_image(image)
 
 
-def index_data(data, filename, index):
-    if isinstance(index, faiss.IndexFlatIP):
-        data = faiss.normalize_L2(data)
-    index.add(data.cpu().numpy().astype(np.float32))
+def index_data(data, index, distance="cosine"):
+    data_cpu = data.cpu().numpy().astype(np.float32)
+    if distance == "cosine":
+        faiss.normalize_L2(data_cpu)
+    index.add(data_cpu)
     return index
 
 
-def search_image(img_path, index, model, preprocess, nres=5):
-    query_img = Image.open(img_path)
+def search_image(query_img, index, model, preprocess, nres=5):
+    if isinstance(query_img, str) or isinstance(query_img, Path):
+        query_img = Image.open(query_img)
     query = embed_image(query_img, model, preprocess)
-    D, I = index.search(np.array(query.cpu()).astype(np.float32), nres)
+    query = np.array(query.cpu()).astype(np.float32)
+    faiss.normalize_L2(query)
+    D, I = index.search(query, nres)
     return D, I
