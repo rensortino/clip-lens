@@ -162,3 +162,5 @@ indexes
 nn
 .tmp
 .vscode
+logdir
+embeddings
